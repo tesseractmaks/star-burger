@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -149,7 +149,7 @@ class OrderItem(models.Model):
                                 on_delete=models.PROTECT,
                                 related_name="order_items",
                                 verbose_name="Items")
-    quantity = models.IntegerField(verbose_name="qQuantity")
+    quantity = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)], verbose_name="qQuantity")
 
     class Meta:
         verbose_name = 'Order element'
