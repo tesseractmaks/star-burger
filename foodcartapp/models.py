@@ -127,7 +127,7 @@ class RestaurantMenuItem(models.Model):
 
 
 class Order(models.Model):
-    firstname = models.CharField(max_length=200, blank=True, db_index=True)
+    firstname = models.CharField(max_length=200, db_index=True)
     lastname = models.CharField(max_length=200, blank=True, db_index=True)
     address = models.TextField(blank=True)
     phonenumber = PhoneNumberField(blank=True, db_index=True)
@@ -138,7 +138,7 @@ class Order(models.Model):
         ordering = ["-firstname"]
 
     def __str__(self):
-        return "{firstname} {lastname}".format(firstname=self.firstname or '', lastname=self.lastname or '')
+        return "{lastname}".format(lastname=self.lastname or '')
 
 
 class OrderItem(models.Model):
