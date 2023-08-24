@@ -1,5 +1,5 @@
 import json
-
+from rest_framework import status
 from django.http import JsonResponse, HttpResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
@@ -65,29 +65,49 @@ def register_order(request):
     # item = json.loads(request.body.decode())
     # item = request.body.decode()
     item = request.data
+    try:
+        match (item['products']):
+            case str():
+                return Response(
+                    "TypeError: 'products': '%s' - string indices must be list" % item['products'],
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            case None:
+                return Response(
+                    "TypeError: 'products': '%s' - This field cannot be empty" % item['products'],
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            case []:
+                return Response(
+                    "TypeError: 'products': '%s' - List cannot be empty" % item['products'],
+                    status=status.HTTP_404_NOT_FOUND
+                )
+    except:
+        return Response("KeyError: 'products' - This is a required field",
+                        status=status.HTTP_404_NOT_FOUND)
+    else:
+        order = Order.objects.create(
+            firstname=item['firstname'],
+            lastname=item['lastname'],
+            address=item['address'],
+            phonenumber=item['phonenumber'], )
 
-    order = Order.objects.create(
-        firstname=item['firstname'],
-        lastname=item['lastname'],
-        address=item['address'],
-        phonenumber=item['phonenumber'], )
+        order_items = [
+            OrderItem(
+                order=order,
+                product=Product.objects.get(id=fields['product']),
+                quantity=fields['quantity'])
+            for fields in item['products']]
 
-    order_items = [
-        OrderItem(
-            order=order,
-            product=Product.objects.get(id=fields['product']),
-            quantity=fields['quantity'])
-        for fields in item['products']]
+        OrderItem.objects.bulk_create(order_items)
 
-    OrderItem.objects.bulk_create(order_items)
-    print(item)
-    # {
-    #     "products": [{"product": 2, "quantity": 2}, {"product": 1, "quantity": 2}, {"product": 3, "quantity": 1}],
-    #     "firstname": "2",
-    #     "lastname": "7",
-    #     "phonenumber": "7",
-    #     "address": "7"
-    # }
+        # {
+        #     "products": [{"product": 2, "quantity": 2}, {"product": 1, "quantity": 2}, {"product": 3, "quantity": 1}],
+        #     "firstname": "2",
+        #     "lastname": "7",
+        #     "phonenumber": "7",
+        #     "address": "7"
+        # }
 
-    # return JsonResponse(item, safe=False)
-    return Response(item)
+        # return JsonResponse(item, safe=False)
+        return Response(item, status=status.HTTP_201_CREATED)
