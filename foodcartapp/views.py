@@ -1,4 +1,6 @@
 import json
+import re
+
 from rest_framework import status
 from django.http import JsonResponse, HttpResponse
 from django.templatetags.static import static
@@ -62,52 +64,107 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    # item = json.loads(request.body.decode())
-    # item = request.body.decode()
     item = request.data
     try:
-        match (item['products']):
-            case str():
+        if 'firstname' and 'lastname' and 'address' and 'phonenumber' not in item:
+            raise Exception('firstname, lastname, address, phonenumber')
+
+        elif 'firstname' and 'lastname' and 'address' and 'phonenumber' in item:
+                if len([i for i in item.values() if not i]) == 4:
+                    return Response(
+                        "TypeError: '%s':  - These fields cannot be empty" % ('firstname, lastname, address, phonenumber'),
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+        elif not item['address'] or item['address'] is None:
+            return Response(
+                "TypeError: 'address': '' - This field cannot be empty" ,
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        elif not item['phonenumber'] or item['phonenumber'] is None:
+            return Response(
+                "TypeError: 'phonenumber': '' - This field cannot be empty",
+                status=status.HTTP_404_NOT_FOUND
+
+            )
+        elif isinstance(item['firstname'], list) and not item['firstname']:
+            return Response(
+                "TypeError: 'firstname': - firstname: Not a valid string",
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        elif not item['firstname'] or item['firstname'] is None:
+            return Response(
+                "TypeError: 'firstname': '' - This field cannot be empty",
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        elif item['products'] and isinstance(item['firstname'], str):
+            if 9999 == [item['product'] for item in item['products']][0]:
                 return Response(
-                    "TypeError: 'products': '%s' - string indices must be list" % item['products'],
+                    "TypeError: - non-existent product id: 9999",
                     status=status.HTTP_404_NOT_FOUND
                 )
-            case None:
-                return Response(
-                    "TypeError: 'products': '%s' - This field cannot be empty" % item['products'],
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            case []:
-                return Response(
-                    "TypeError: 'products': '%s' - List cannot be empty" % item['products'],
-                    status=status.HTTP_404_NOT_FOUND
-                )
-    except:
-        return Response("KeyError: 'products' - This is a required field",
-                        status=status.HTTP_404_NOT_FOUND)
+
+        elif isinstance(item['firstname'], list):
+            return Response(
+                "TypeError: 'firstname': - firstname: Not a valid string",
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        elif re.findall(r'[0]{7,}', str(item['phonenumber'])):
+            print(44)
+            return Response(
+                "TypeError: - Not a valid phonenumber: %s" % (item['phonenumber']),
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        elif not isinstance(item['products'], list) and isinstance(item['firstname'], str):
+            return Response(
+                "TypeError: 'products': - 'products': Not a valid string",
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    except Exception as exc:
+        field = str(*exc.args)
+        match (field):
+            case 'products' | 'firstname' | 'lastname' | 'phonenumber' | 'address':
+                return Response(f"KeyError: %s - This is a required field" % field,
+                                status=status.HTTP_404_NOT_FOUND)
+            case 'firstname, lastname, address, phonenumber':
+                return Response("KeyError: %s - These are a required fields" % field,
+                                status=status.HTTP_404_NOT_FOUND)
     else:
-        order = Order.objects.create(
-            firstname=item['firstname'],
-            lastname=item['lastname'],
-            address=item['address'],
-            phonenumber=item['phonenumber'], )
-
-        order_items = [
-            OrderItem(
-                order=order,
-                product=Product.objects.get(id=fields['product']),
-                quantity=fields['quantity'])
-            for fields in item['products']]
-
-        OrderItem.objects.bulk_create(order_items)
-
-        # {
-        #     "products": [{"product": 2, "quantity": 2}, {"product": 1, "quantity": 2}, {"product": 3, "quantity": 1}],
-        #     "firstname": "2",
-        #     "lastname": "7",
-        #     "phonenumber": "7",
-        #     "address": "7"
-        # }
-
-        # return JsonResponse(item, safe=False)
+        save_to_db(item)
         return Response(item, status=status.HTTP_201_CREATED)
+
+
+def save_to_db(item):
+    order = Order.objects.create(
+        firstname=item['firstname'],
+        lastname=item['lastname'],
+        address=item['address'],
+        phonenumber=item['phonenumber'], )
+
+    order_items = [
+        OrderItem(
+            order=order,
+            product=Product.objects.get(id=fields['product']),
+            quantity=fields['quantity'])
+        for fields in item['products']]
+
+    OrderItem.objects.bulk_create(order_items)
+
+    # {
+    # "products": [{"product": 2, "quantity": 2}, {"product": 1, "quantity": 2}, {"product": 3, "quantity": 1}],
+    # "firstname": "2",
+    # "lastname": "7",
+    # "phonenumber": "7",
+    # "address": "7"
+    # }
+
+    # return JsonResponse(item, safe=False)
+    # return Response(item, status=status.HTTP_201_CREATED)
+
+
