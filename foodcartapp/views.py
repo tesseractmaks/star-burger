@@ -68,6 +68,7 @@ def product_list_api(request):
 def register_order(request):
     item = request.data
 
+
     if item:
         save_to_db(item)
         return Response(item, status=status.HTTP_201_CREATED)
@@ -84,12 +85,12 @@ def save_to_db(item):
         lastname=serializer_order.validated_data['lastname'],
         address=serializer_order.validated_data['address'],
         phonenumber=serializer_order.validated_data['phonenumber'],)
-    order_items_fields = serializer_order.validated_data['products']
 
+    order_items_fields = serializer_order.validated_data['products']
     order_items = [
         OrderItem(
             order=order,
-            product=Product.objects.get(id=fields['product']),
+            product=Product.objects.get(id=fields['product'].id),
             quantity=fields['quantity'])
         for fields in order_items_fields]
 
@@ -99,8 +100,16 @@ def save_to_db(item):
     # "products": [{"product": 2, "quantity": 2}, {"product": 1, "quantity": 2}, {"product": 3, "quantity": 1}],
     # "firstname": "2",
     # "lastname": "7",
-    # "phonenumber": "7",
+    # "phonenumber": "+79291000000",
     # "address": "7"
+    # }
+
+    # {
+    #     "products": [{"product": 1, "quantity": 3}, {"product": 2, "quantity": 3}, {"product": 3, "quantity": 2}],
+    #     "firstname": "y",
+    #     "lastname": "i",
+    #     "phonenumber": "+79291000000",
+    #     "address": "ky",
     # }
 
     # return JsonResponse(item, safe=False)

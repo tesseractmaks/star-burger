@@ -18,6 +18,7 @@ class ProductSerializer(ModelSerializer):
 
 
 class OrderItemSerializer(ModelSerializer):
+
     class Meta:
         model = OrderItem
         fields = [
