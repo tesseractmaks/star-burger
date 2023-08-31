@@ -1,7 +1,7 @@
 from rest_framework.serializers import ModelSerializer
 from phonenumber_field.serializerfields import PhoneNumberField
 from .models import Product, Order, OrderItem
-
+from rest_framework import serializers
 
 class ProductSerializer(ModelSerializer):
     class Meta:
@@ -28,12 +28,18 @@ class OrderItemSerializer(ModelSerializer):
 
 
 class OrderSerializer(ModelSerializer):
-    products = OrderItemSerializer(many=True, allow_empty=False, allow_null=False)
+    products = OrderItemSerializer(
+        many=True,
+        allow_empty=False,
+        allow_null=False,
+        write_only=True,
+    )
     phonenumber = PhoneNumberField(region="RU")
 
     class Meta:
         model = Order
         fields = [
+            'id',
             'firstname',
             'lastname',
             'address',
@@ -44,5 +50,8 @@ class OrderSerializer(ModelSerializer):
             'lastname': {'required': True},
             'address': {'required': True},
         }
+
+
+
 
 

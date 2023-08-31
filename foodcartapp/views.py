@@ -5,9 +5,10 @@ from rest_framework import status
 from django.http import JsonResponse, HttpResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
-from .serializers import ProductSerializer, OrderSerializer, OrderItemSerializer
+from .serializers import ProductSerializer, OrderSerializer, OrderItemSerializer, ResponseSerializer
 
 from .models import Product, Order, OrderItem
 
@@ -67,13 +68,8 @@ def product_list_api(request):
 @api_view(['POST'])
 def register_order(request):
     item = request.data
-
-
-    if item:
-        save_to_db(item)
-        return Response(item, status=status.HTTP_201_CREATED)
-    else:
-        raise ValidationError('Expects products field be a list')
+    order = save_to_db(item)
+    return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
 
 def save_to_db(item):
@@ -93,8 +89,9 @@ def save_to_db(item):
             product=Product.objects.get(id=fields['product'].id),
             quantity=fields['quantity'])
         for fields in order_items_fields]
-
     OrderItem.objects.bulk_create(order_items)
+    return order
+
 
     # {
     # "products": [{"product": 2, "quantity": 2}, {"product": 1, "quantity": 2}, {"product": 3, "quantity": 1}],
