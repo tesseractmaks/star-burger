@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
-from .serializers import ProductSerializer, OrderSerializer, OrderItemSerializer, ResponseSerializer
+from .serializers import ProductSerializer, OrderSerializer, OrderItemSerializer
 
 from .models import Product, Order, OrderItem
 
