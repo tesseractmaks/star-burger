@@ -14,7 +14,7 @@ class ProductsInline(admin.TabularInline):
     model = OrderItem
     extra = 0
     verbose_name = u"Order element"
-    verbose_name_plural = u"Order elementss"
+    verbose_name_plural = u"Order elements"
 
 
 @admin.register(Order)
@@ -67,6 +67,7 @@ class ProductAdmin(admin.ModelAdmin):
         'category',
         'price',
     ]
+    list_editable = ['price']
     list_display_links = [
         'name',
     ]

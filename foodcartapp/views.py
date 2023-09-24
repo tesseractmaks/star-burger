@@ -73,6 +73,7 @@ def register_order(request):
 
 
 def save_to_db(item):
+
     serializer_order = OrderSerializer(data=item)
     serializer_order.is_valid(raise_exception=True)
 
@@ -83,14 +84,18 @@ def save_to_db(item):
         phonenumber=serializer_order.validated_data['phonenumber'],)
 
     order_items_fields = serializer_order.validated_data['products']
+
     order_items = [
         OrderItem(
             order=order,
             product=Product.objects.get(id=fields['product'].id),
-            quantity=fields['quantity'])
+            quantity=fields['quantity'],
+            price=Product.objects.get(id=fields['product'].price))
         for fields in order_items_fields]
     OrderItem.objects.bulk_create(order_items)
     return order
+
+
 
 
     # {

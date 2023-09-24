@@ -1,7 +1,9 @@
+import collections
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from django.db.models import Sum, F, Count, Value, Prefetch
 from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -70,7 +72,9 @@ class Product(models.Model):
         'цена',
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(0)]
+        validators=[MinValueValidator(0)],
+        blank=True,
+        db_index=True
     )
     image = models.ImageField(
         'картинка'
@@ -126,11 +130,25 @@ class RestaurantMenuItem(models.Model):
         return f"{self.restaurant.name} - {self.product.name}"
 
 
+class AllOrdersQuerySet(models.QuerySet):
+
+    def all_orders_total_prices(self):
+        total_prices = [
+            (
+                order.order_items.aggregate(total=Sum(F('quantity') * F('price'))), #.get("total"),
+                order
+            ) for order in self
+        ]
+
+        return total_prices
+
+
 class Order(models.Model):
     firstname = models.CharField(max_length=200, db_index=True)
     lastname = models.CharField(max_length=200, blank=True, db_index=True)
     address = models.TextField(blank=True)
     phonenumber = PhoneNumberField(blank=True)
+
 
     class Meta:
         verbose_name = 'заказ'
@@ -140,16 +158,19 @@ class Order(models.Model):
     def __str__(self):
         return "{lastname}".format(lastname=self.lastname or '')
 
+    objects = AllOrdersQuerySet.as_manager()
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE,
-                              related_name="items",
+                              related_name="order_items",
                               verbose_name="Associated order")
     product = models.ForeignKey(Product,
                                 on_delete=models.PROTECT,
-                                related_name="order_items",
+                                related_name="product_items",
                                 verbose_name="Items")
-    quantity = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)], verbose_name="qQuantity")
+    quantity = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)], verbose_name="quantity", db_index=True)
+    price = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)], verbose_name="price")
 
     class Meta:
         verbose_name = 'Order element'
@@ -157,6 +178,14 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product}, qty: {self.quantity}"
+
+
+
+
+
+
+
+
 
 
 
